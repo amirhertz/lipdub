@@ -12,7 +12,7 @@ from scipy.ndimage.filters import gaussian_filter1d
 import constants
 import ffmpeg
 import cv2
-
+from argparse import ArgumentParser
 
 def get_drawer(img, shape, line_width):
 
@@ -115,7 +115,8 @@ class FaceAlign:
     def get_landmarks_cached(self, path: List[str], image: Optional[ARRAY] = None) -> ARRAY:
         name = path[0].split('/')[-2:] + [path[1]]
         name = 'landmarks_'.join(name)
-        path_cache = f"{constants.MNT_ROOT}/cache/{name}.npy"
+        # path_cache = f"{constants.MNT_ROOT}/cache/{name}.npy"
+        path_cache = "/mnt/ml/projects/dubbing/cache/template_landmarks.npy"
         if files_utils.is_file(path_cache):
             landmarks = files_utils.load_np(path_cache)
         else:
@@ -313,7 +314,8 @@ class FaceAlign:
             def __init__(self, lst):
                 self.lst = lst
         metadata = files_utils.load_pickle(f"{crops_root}/metadata")
-        video_path = metadata["video_path"]
+        video_path = metadata["video_path"].replace("/home/ahertz/projects/StyleFusion-main/assets/",
+                                                    "/mnt/ml/projects/")
         vid_orig = imageio.get_reader(f"{video_path}", 'ffmpeg')
         if starting_time > 0:
             prefix = int(metadata['fps'] * starting_time)
@@ -358,10 +360,20 @@ if __name__ == '__main__':
     # aligner.crop_video(f"/mnt/r/projects/facesimile/shots/101/purpledino_genwoman/comp_wip/images/comp_main_publish_qt/101_purpledino_genwoman_comp_v017.mov",
     #                    f"{constants.DATA_ROOT}/101_purpledino_genwoman_comp_v017", 100)
 
-    aligner.crop_video(f"{constants.MNT_ROOT}/marz_dub/BillieFrench_FaceFormer.mp4",
-                       f"{constants.MNT_ROOT}/processed_infer/BillieFrench_FaceFormer", 10000)
-    aligner.landmarks_only(f"{constants.MNT_ROOT}/processed_infer/BillieFrench_FaceFormer", 2)
-    aligner.landmarks_only(f"{constants.MNT_ROOT}/processed_infer/BillieFrench_FaceFormer", 3)
+    # aligner.crop_video(f"{constants.MNT_ROOT}/marz_dub/BillieFrench_FaceFormer.mp4",
+    #                    f"{constants.MNT_ROOT}/processed_infer/BillieFrench_FaceFormer", 10000)
+    # aligner.landmarks_only(f"{constants.MNT_ROOT}/processed_infer/BillieFrench_FaceFormer", 2)
+    # aligner.landmarks_only(f"{constants.MNT_ROOT}/processed_infer/BillieFrench_FaceFormer", 3)
+    input_dir = "/mnt/ml/projects/dubbing/marz_dub/project2/FaceFormer Outputs"
+    output_dir = "/mnt/ml/projects/dubbing/processed_infer"
+    files = os.listdir(input_dir)
+    for file in files:
+        input_file = os.path.join(input_dir, file)
+        output_file = os.path.join(output_dir, file[:-4] + "_FaceFormer")
+        print(input_file, output_file)
+        aligner.crop_video(input_file, output_file, 10000)
+        aligner.landmarks_only(output_file, 2)
+        aligner.landmarks_only(output_file, 3)
     # aligner.crop_video(f"{constants.DATA_ROOT}/raw_videos/obama_062814.mp4", f"{constants.DATA_ROOT}/obama", 30)
     # viseme2vec(f"{constants.DATA_ROOT}/raw_videos/obama_062814",
     #             f"{constants.DATA_ROOT}/processed/viseme_obama_062814",

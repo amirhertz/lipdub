@@ -1,6 +1,7 @@
 import os
 import constants as const
 import pickle
+
 if pickle.HIGHEST_PROTOCOL < 5:
     import pickle5
 from shutil import copyfile, move
@@ -8,14 +9,13 @@ from custom_types import *
 from PIL import Image
 import time
 import json
+import re
 import matplotlib.pyplot as plt
 from scipy.io import wavfile
 
 
 def path_init(suffix: str, path_arg_ind: int, is_save: bool):
-
     def wrapper(func):
-
         def do(*args, **kwargs):
             path = add_suffix(args[path_arg_ind], suffix)
             if is_save:
@@ -106,9 +106,6 @@ def remove_suffix(path: str, suffix: str) -> str:
     if len(path) > len(suffix) and path[-len(suffix):] == suffix:
         path = path[:-len(suffix)]
     return path
-
-
-
 
 
 def copy_file(src: str, dest: str, force=False):
@@ -244,7 +241,7 @@ def collect(root: str, *suffix, prefix='') -> List[List[str]]:
     return paths
 
 
-def delete_all(root:str, *suffix: str):
+def delete_all(root: str, *suffix: str):
     if const.DEBUG:
         return
     paths = collect(root, *suffix)
@@ -274,7 +271,6 @@ def colors_to_colors(colors: COLORS, mesh: T_Mesh) -> T:
 
 def load_mesh(file_name: str, dtype: Union[type(T), type(V)] = T,
               device: D = CPU) -> Union[T_Mesh, V_Mesh, T, Tuple[T, List[List[int]]]]:
-
     def off_parser():
         header = None
 
@@ -482,7 +478,7 @@ def export_ply(mesh: T_Mesh, path: str, colors: T):
     swap = vs[:, 1].clone()
     vs[:, 1] = vs[:, 2]
     vs[:, 2] = swap
-    min_cor, max_cor= vs.min(0)[0], vs.max(0)[0]
+    min_cor, max_cor = vs.min(0)[0], vs.max(0)[0]
     vs = vs - ((min_cor + max_cor) / 2)[None, :]
     vs = vs / vs.max()
     vs[:, 2] = vs[:, 2] - vs[:, 2].min()
@@ -569,3 +565,17 @@ def load_json(path: str):
     with open(path, 'r') as f:
         data = json.load(f)
     return data
+
+
+def alphanum_key(s):
+    """ Turn a string into a list of string and number chunks.
+        "z23a" -> ["z", 23, "a"]
+    """
+
+    def tryint(s):
+        try:
+            return int(s)
+        except:
+            return s
+
+    return [tryint(c) for c in re.split('([0-9]+)', s)]

@@ -1,5 +1,7 @@
-import torch
+import sys
 
+import torch
+sys.path.append("/home/npatel/Documents/lipdub")
 from utils import files_utils, train_utils
 from custom_types import *
 import constants
@@ -42,7 +44,7 @@ class TrainLipsGeneratorSeq(TrainLipsGenerator):
     def pad(self, *x):
         return [nnf.pad(item, (64, 64, 128, 0)) for item in x]
 
-    def get_discriminator_loss(self, out, key:Optional[str] = None):
+    def get_discriminator_loss(self, out, key: Optional[str] = None):
         return 0
 
     @models_utils.torch_no_grad
@@ -92,9 +94,11 @@ class TrainLipsGeneratorSeq(TrainLipsGenerator):
         if self.opt.reg_lips > 0:
 
             predict_landmarks_result = self.get_landmarks(out_predict_result)
-            loss += self.opt.reg_lips * self.get_lips_detection_open_loss(predict_landmarks_result, landmarks, 'lips_open')
+            loss += self.opt.reg_lips * self.get_lips_detection_open_loss(predict_landmarks_result, landmarks,
+                                                                          'lips_open')
             if self.opt.reg_lips_center > 0:
-                loss += self.opt.reg_lips_center * self.get_lips_center_loss(predict_landmarks_result, lines, 'lips_center')
+                loss += self.opt.reg_lips_center * self.get_lips_center_loss(predict_landmarks_result, lines,
+                                                                             'lips_center')
         if is_train:
             self.optimizer.zero_grad()
             loss.backward()
@@ -113,10 +117,10 @@ class TrainLipsGeneratorSeq(TrainLipsGenerator):
             self.logger.stash_iter(key, loss)
         return loss
 
-
     def infer_train(self, base_folder: str, driving_folder: str, starting_time: int = -1, ending_time: int = -1,
                     num_epochs: int = 5):
-        infer_ds = prcoess_face_forensics.LipsSeqDSInfer(self.dataset, base_folder, driving_folder, starting_time, ending_time)
+        infer_ds = prcoess_face_forensics.LipsSeqDSInfer(self.dataset, base_folder, driving_folder, starting_time,
+                                                         ending_time)
         dataloader = DataLoader(infer_ds, batch_size=10, drop_last=True, shuffle=True, num_workers=0 if DEBUG else 8)
         dl_train = DataLoader(self.dataset, num_workers=0 if DEBUG else 8, shuffle=not constants.DEBUG, drop_last=True,
                               batch_size=10)
@@ -134,9 +138,9 @@ class TrainLipsGeneratorSeq(TrainLipsGenerator):
                 predict_landmarks_result = self.get_landmarks(out_predict_result)
                 # loss = self.get_sync_loss(out_predict_result, audio, "sync")
                 loss = 10 * self.opt.reg_lips * self.get_lips_detection_open_loss(predict_landmarks_result, landmarks,
-                                                                         'lips_open_test')
+                                                                                  'lips_open_test')
                 loss += 10 * self.get_lips_detection_loss(predict_landmarks_result, landmarks,
-                                                                        'lips_all')
+                                                          'lips_all')
                 self.optimizer.zero_grad()
                 loss.backward()
                 self.optimizer.step()
@@ -158,8 +162,6 @@ class TrainLipsGeneratorSeq(TrainLipsGenerator):
                 landmarks_all += [self.dataset.aligner.get_landmarks(image) for image in images]
         landmarks_all = np.concatenate(landmarks_all)
         files_utils.save_np(landmarks_all, f"{self.opt.cp_folder}/test_lm/{name}")
-
-
 
     @models_utils.torch_no_grad
     def infer(self, base_folder: str, driving_folder: str, starting_time: int = -1, ending_time: int = -1,
@@ -244,7 +246,6 @@ class TrainLipsGeneratorSeqDisc(TrainLipsGeneratorSeq):
         loss = nnf.binary_cross_entropy_with_logits(out.squeeze(), labels)
         return loss
 
-
     def disc_iter(self, epoch, data, last_iter: bool):
         _, images, ref_images, landmarks, gt_images, mask_seq = self.prepare_data(data[:-2])
         with torch.no_grad():
@@ -278,9 +279,10 @@ class TrainLipsGeneratorSeqDisc(TrainLipsGeneratorSeq):
     def __init__(self, opt: OptionsLipsGeneratorSeq):
         super(TrainLipsGeneratorSeqDisc, self).__init__(opt)
         self.discriminator, _ = train_utils.model_lc(opt, suffix='discriminator',
-                                                  override_model='seq_lips_discriminator')
+                                                     override_model='seq_lips_discriminator')
         if self.data_parallel:
-            self.discriminator = nn.DataParallel(self.discriminator, device_ids=[i for i in range(torch.cuda.device_count())])
+            self.discriminator = nn.DataParallel(self.discriminator,
+                                                 device_ids=[i for i in range(torch.cuda.device_count())])
         self.optimizer_d, self.scheduler_d, self.warm_up_scheduler_d = self.get_optimizer(self.discriminator)
 
 
@@ -293,6 +295,7 @@ class InferenceTrainingSeq(TrainLipsGeneratorSeq):
 
     def fine_tune(self, tag: str):
         opt = OptionsLipsGeneratorSeq(tag=tag, device=self.device).load()
+        print(opt.cp_folder)
         model, _ = train_utils.model_lc(opt)
         self.model.load_state_dict(model.state_dict())
         super(InferenceTrainingSeq, self).train()
@@ -331,7 +334,6 @@ class InferenceTrainingSeqFaceFormer(InferenceTrainingSeq):
         self.scheduler = torch.optim.lr_scheduler.ExponentialLR(self.optimizer, .9)
 
 
-
 def main():
     opt = OptionsLipsGeneratorSeq(tag='chin').load()
     opt.device = CUDA(0)
@@ -343,11 +345,15 @@ def main():
 
 
 def inference_train():
-
     info_dict = {'Eilish': {'name_base': 'Eilish', 'name_driving': 'Eilish_French052522', 'tag': 'Eilish'},
                  'Johnson': {'name_base': 'Johnson', 'name_driving': 'Dwayne_Spanish_FaceFormer', 'tag': 'Johnson'},
-                 'Bourdain': {'name_base': 'BourdainT', 'name_driving': 'Bourdain_Italian_faceformer', 'tag': 'Bourdain'}}
-    info = info_dict['Eilish']
+                 'Bourdain': {'name_base': 'BourdainT', 'name_driving': 'Bourdain_Italian_faceformer',
+                              'tag': 'Bourdain'},
+                 'Anya': {'name_base': 'Elena_Anaya', 'name_driving': 'Elena_Anaya_French_FaceFormer',
+                          'tag': 'Anya_French'}
+                 }
+    info = info_dict['Anya']
+    # print(constants.MNT_ROOT + f'video_frames/{info["name_base"]}/')
     opt = OptionsLipsGeneratorSeq(tag=info['tag'],
                                   data_dir=constants.MNT_ROOT + f'video_frames/{info["name_base"]}/',
                                   epochs=2,
@@ -357,7 +363,7 @@ def inference_train():
     # model.fine_tune('all_nose')
     model.infer_train(f'{constants.MNT_ROOT}/processed_infer/{info["name_base"]}/',
                       f'{constants.MNT_ROOT}/processed_infer/{info["name_driving"]}/',
-                      starting_time=10, ending_time=-1, num_epochs=10)
+                      starting_time=10, ending_time=-1, num_epochs=5)
 
     model.infer(f'{constants.MNT_ROOT}/processed_infer/{info["name_base"]}/',
                 f'{constants.MNT_ROOT}/processed_infer/{info["name_driving"]}/',
@@ -365,4 +371,4 @@ def inference_train():
 
 
 if __name__ == '__main__':
-    main()
+    inference_train()

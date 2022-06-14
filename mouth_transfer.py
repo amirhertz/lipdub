@@ -6,28 +6,28 @@ import mediapipe as mp
 import constants
 import cv2
 import process_video
+
 # import e4e
 
 
-FACEMESH_LIPS = V([(291, 409), (409, 270), (270, 269), (269, 267), (267, 0), (0, 37), (37, 39), (39, 40), (40, 185), (185, 61), (61, 146), (146, 91), (91, 181), (181, 84), (84, 17),
-                   (17, 314), (314, 405), (405, 321), (321, 375),
-                   (375, 291), ], dtype=np.int32)
-
+FACEMESH_LIPS = V(
+    [(291, 409), (409, 270), (270, 269), (269, 267), (267, 0), (0, 37), (37, 39), (39, 40), (40, 185), (185, 61),
+     (61, 146), (146, 91), (91, 181), (181, 84), (84, 17),
+     (17, 314), (314, 405), (405, 321), (321, 375),
+     (375, 291), ], dtype=np.int32)
 
 FACEMESH_FACE_OVAL = V([(10, 338), (338, 297), (297, 332), (332, 284),
-                                (284, 251), (251, 389), (389, 356), (356, 454),
-                                (454, 323), (323, 361), (361, 288), (288, 397),
-                                (397, 365), (365, 379), (379, 378), (378, 400),
-                                (400, 377), (377, 152), (152, 148), (148, 176),
-                                (176, 149), (149, 150), (150, 136), (136, 172),
-                                (172, 58), (58, 132), (132, 93), (93, 234),
-                                (234, 127), (127, 162), (162, 21), (21, 54),
-                                (54, 103), (103, 67), (67, 109), (109, 10)], dtype=np.int32)
-
+                        (284, 251), (251, 389), (389, 356), (356, 454),
+                        (454, 323), (323, 361), (361, 288), (288, 397),
+                        (397, 365), (365, 379), (379, 378), (378, 400),
+                        (400, 377), (377, 152), (152, 148), (148, 176),
+                        (176, 149), (149, 150), (150, 136), (136, 172),
+                        (172, 58), (58, 132), (132, 93), (93, 234),
+                        (234, 127), (127, 162), (162, 21), (21, 54),
+                        (54, 103), (103, 67), (67, 109), (109, 10)], dtype=np.int32)
 
 
 def find_transform(source, target, img_target, *sources):
-
     source = np.roll(source, 1, -1).reshape(-1, 1, 2)
     target = np.roll(target, 1, -1).reshape(-1, 1, 2)
 
@@ -37,7 +37,7 @@ def find_transform(source, target, img_target, *sources):
     out = []
     for source in sources:
         img_source = source[0].permute(1, 2, 0).numpy()
-        im_dst = cv2.warpPerspective(img_source,  mat_h, (img_target.shape[1], img_target.shape[0]))
+        im_dst = cv2.warpPerspective(img_source, mat_h, (img_target.shape[1], img_target.shape[0]))
         im_dst = torch.from_numpy(im_dst)
         if im_dst.dim() == 2:
             im_dst = im_dst.unsqueeze(0).unsqueeze(0)
@@ -49,14 +49,13 @@ def find_transform(source, target, img_target, *sources):
     return out
 
 
-
 def get_masked_mean_sdt(x, mask):
     eps = 1e-5
     mask_pixels = mask.permute(0, 2, 3, 1).flatten()
     x_pixels = x.permute(0, 2, 3, 1).view(-1, 3)[mask_pixels.bool()]
     mean_x = x_pixels.mean(0)
     std_x = x_pixels.std(0) + eps
-    return mean_x.unsqueeze(-1).unsqueeze(-1).unsqueeze(0) , std_x.unsqueeze(-1).unsqueeze(-1).unsqueeze(0)
+    return mean_x.unsqueeze(-1).unsqueeze(-1).unsqueeze(0), std_x.unsqueeze(-1).unsqueeze(-1).unsqueeze(0)
 
 
 def masked_ada_in(x, y, mask_x, mask_y):
@@ -71,7 +70,7 @@ def get_lips(image, landmarks, select, to_torch: bool = True):
     contour = landmarks[:, 0]
     points = landmarks[select][:, 0]
     mask = np.zeros(image.shape[:2], dtype=np.uint8)
-    mask = cv2.fillPoly(mask, [np.roll(points, 1, -1).astype(np.int32)], True,  255)
+    mask = cv2.fillPoly(mask, [np.roll(points, 1, -1).astype(np.int32)], True, 255)
     if to_torch:
         mask = torch.from_numpy(mask)
         mask = mask.view(1, 1, *mask.shape).float()
@@ -161,7 +160,7 @@ class TargetMouth:
     def get_lips_image(self, res=128):
         mask = self.lips_mask.float()
         image_bg = self.base_image * .3 + .7
-        image = image_bg * (1-mask) + mask * self.base_image
+        image = image_bg * (1 - mask) + mask * self.base_image
         if res < image.shape[3]:
             image = nnf.interpolate(image, res, mode='bilinear')
         image = (image[0] * 255).permute(1, 2, 0).numpy().astype(np.uint8)
@@ -212,7 +211,8 @@ class TargetMouth:
                 print('error')
                 self.error = True
             else:
-                TargetMouth.cache = results = face_mesh.process(cv2.cvtColor(image, cv2.COLOR_BGR2RGB)).multi_face_landmarks[0].landmark
+                TargetMouth.cache = results = \
+                face_mesh.process(cv2.cvtColor(image, cv2.COLOR_BGR2RGB)).multi_face_landmarks[0].landmark
         landmark_arr = landmarks_to_arr(results, image)
         lips, _ = get_lips(image, landmark_arr, FACEMESH_LIPS)
         face, face_contour = get_lips(image, landmark_arr, FACEMESH_FACE_OVAL)
@@ -230,10 +230,11 @@ class TargetMouth:
             image_path = f"{constants.DATA_ROOT}/exp_mid/{item:02d}"
         else:
             image_path = item
-        self.lips_mask, self.face_mask, self.base_image, self.offset, self.face_contour = self.init_image(image_path, is_np)
+        self.lips_mask, self.face_mask, self.base_image, self.offset, self.face_contour = self.init_image(image_path,
+                                                                                                          is_np)
 
 
-def transfer_viseme(is_step_a:bool=True):
+def transfer_viseme(is_step_a: bool = True):
     folder_source = f'{constants.DATA_ROOT}/processed/'
     folder_database = f'{constants.DATA_ROOT}/processed/'
     viseme_database = f"{constants.DATA_ROOT}/raw_videos/obama_062814_viseme_vec"
@@ -255,9 +256,7 @@ def transfer_viseme(is_step_a:bool=True):
     logger.stop()
 
 
-
 def viseme2id():
-
     @models_utils.torch_no_grad
     def get_base_image():
         if j <= len(base_images):
@@ -269,9 +268,6 @@ def viseme2id():
             out = out.clip(0, 255).permute(1, 2, 0).numpy().astype(np.uint8)
             base_images.append(out)
         return base_images[j]
-
-
-
 
     base_images = []
     e4e_net = e4e.E4E()
@@ -336,8 +332,6 @@ def transfer_video():
         images.append(image_)
         files_utils.save_np(image_, f'{out_root}/crop_{counter:03d}')
 
-
-
         # files_utils.save_image(image_, f'/home/ahertz/projects/StyleFusion-main/assets/slides_0404/lips_origin_{counter:02d}')
 
     image_utils.gif_group(images, f'{constants.CHECKPOINTS_ROOT}pti/{vid_name}/stich', fps)
@@ -366,7 +360,6 @@ def video2image(name_mouth):
 
 @models_utils.torch_no_grad
 def generate_masks():
-
     def get_lips_mask():
         nonlocal image
         mp_face_mesh = mp.solutions.face_mesh
@@ -382,7 +375,7 @@ def generate_masks():
 
             else:
                 TargetMouth.cache = results = \
-                face_mesh.process(cv2.cvtColor(image, cv2.COLOR_BGR2RGB)).multi_face_landmarks[0].landmark
+                    face_mesh.process(cv2.cvtColor(image, cv2.COLOR_BGR2RGB)).multi_face_landmarks[0].landmark
 
         landmark_arr = landmarks_to_arr(results, image)
         lips, _ = get_lips(image, landmark_arr, FACEMESH_LIPS, to_torch=False)
@@ -401,9 +394,6 @@ def generate_masks():
     logger.stop()
 
 
-
-
-
 def main():
     folder_mouth = f'/home/ahertz/projects/StyleFusion-main/assets/101_beigefox_front_comp_v017/'
     folder_image = f'/home/ahertz/projects/StyleFusion-main/assets/processed/'
@@ -416,7 +406,6 @@ def main():
     # group_b = paths[120:]
     images = []
     for path_a, path_b in zip(paths_images, paths_mouth):
-
         counter += 1
         # if counter % 20 != 0:
         #     continue
@@ -426,15 +415,16 @@ def main():
         #     files_utils.imshow(image_)
         # images.append(image_)
         images.append(image_)
-        files_utils.save_np(image_, f'/home/ahertz/projects/StyleFusion-main/assets/101_beigefox_front_comp_v017/crop_{counter:03d}')
+        files_utils.save_np(image_,
+                            f'/home/ahertz/projects/StyleFusion-main/assets/101_beigefox_front_comp_v017/crop_{counter:03d}')
         # files_utils.imshow(image_)
         # image = mouth.get_lips_image()
 
         # files_utils.save_image(image_, f'/home/ahertz/projects/StyleFusion-main/assets/slides_0404/lips_origin_{counter:02d}')
 
     image_utils.gif_group(images, f'{constants.CHECKPOINTS_ROOT}pti/101_beigefox_front_comp_v017/stich', 24)
-        # if counter == 51:
-        #     break
+    # if counter == 51:
+    #     break
     # w_plus = files_utils.load_pickle(f'{folder}/e4e_w_plus')[:, 0]
     # image_path = f'{constants.CHECKPOINTS_ROOT}pti/image_00002404'
     # for i in range(7):

@@ -17,8 +17,6 @@ def get_mask(img, shape, opt: options.OptionsLipsGenerator):
 
 
 def get_drawer(img, shape, line_width):
-
-
     def draw_curve_(idx_list, color=(0, 255, 0), loop=False):
         for i in idx_list:
             cv2.line(img, (shape[i, 0], shape[i, 1]), (shape[i + 1, 0], shape[i + 1, 1]), color, line_width)
@@ -114,6 +112,8 @@ def draw_lips(img, lips, scale=1):
     #     files_utils.imshow(img_)
     #     print(i)
     return img
+
+
 # 0-left out
 # 3-top out
 # 6-right out
@@ -124,6 +124,7 @@ def draw_lips(img, lips, scale=1):
 # 18-bottom in
 
 def vis_landmark_on_img(img, shape, line_width=2):
+    img = img.copy()
     shape = shape.astype(np.int32)
     draw_curve = get_drawer(img, shape, line_width)
     draw_curve(list(range(0, 16)), color=(255, 144, 25))  # jaw

@@ -367,12 +367,12 @@ class LipsSeqDS(LipsConditionedDS):
         return image_in, image_ref, lm_driving, image_full, driving_image, mask
 
     def transform_landmarks(self, landmarks, image, is_train: Optional[bool]= None):
-        if self.frontalize:
-            landmarks = [self.frontalize(lm) for lm in landmarks]
+        # if self.frontalize:
+        #     landmarks = [self.frontalize(lm) for lm in landmarks]
         lms_base = np.concatenate(landmarks, axis=0)
         lm_lips = self.transform.landmarks_only(lms_base, image, self.is_train and not self.opt.frontalize if is_train is None else is_train)
         lm_lips = lm_lips.reshape((lm_lips.shape[0] // 68, 68, 2))
-        if self.opt.draw_lips_lines:
+        if self.opt.draw_jaw:
             lm_lips = np.concatenate((lm_lips[:, :17, :], lm_lips[:, 48:, :]), axis=1)
         else:
             lm_lips = lm_lips[:, 48:, :]
@@ -473,10 +473,11 @@ class LipsSeqDS(LipsConditionedDS):
     def __init__(self, opt: options.OptionsLipsGeneratorSeq):
         super(LipsSeqDS, self).__init__(opt)
         self.opt = opt
-        if opt.frontalize:
-            self.frontalize = frontalize_landmarks.FrontalizeLandmarks()
-        else:
-            self.frontalize = None
+        self.frontalize = None
+        # if opt.frontalize:
+        #     self.frontalize = frontalize_landmarks.FrontalizeLandmarks()
+        # else:
+        #     self.frontalize = None
 
 
 class LipsSeqDSDual(LipsSeqDS):
@@ -728,7 +729,7 @@ def lips_squares(lips_target, lips_source):
 
 
 def adjust_lm(fl_driving, fl_source):
-    template = files_utils.load_np(f"{constants.CACHE_ROOT}/template_landmarks") * 2
+    template = files_utils.load_np(f"/mnt/ml/projects/dubbing/cache/template_landmarks") * 2
     template = template.astype(fl_driving.dtype)
     template = np.expand_dims(template, axis=0)
     template = np.repeat(template, fl_driving.shape[0], axis=0)

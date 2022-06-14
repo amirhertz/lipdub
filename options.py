@@ -147,9 +147,9 @@ class OptionsLipsGenerator(BaseOptions):
         self.pretrained_tag = f''
         self.reverse_input = False
         self.res = 256
-        self.chin_mode = True
-        self.frontalize = True
-        self.draw_jaw = True
+        self.chin_mode = False
+        self.frontalize = False
+        self.draw_jaw = False
         self.fill_args(kwargs)
 
 

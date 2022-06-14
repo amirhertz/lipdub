@@ -8,17 +8,18 @@ get_trace = getattr(sys, 'gettrace', None)
 DEBUG = get_trace is not None and get_trace() is not None
 EPSILON = 1e-4
 PROJECT_ROOT = os.path.dirname(os.path.realpath(__file__))
-DATA_ROOT = f'{PROJECT_ROOT}/assets/'
+# DATA_ROOT = f'{PROJECT_ROOT}/assets/'
+DATA_ROOT = "/mnt/ml/projects/"
 RAW_ROOT = f'{DATA_ROOT}raw/'
 PLOT_ROOT = f'{PROJECT_ROOT}/plots/'
 OUT_ROOT = f'{DATA_ROOT}out/'
-CHECKPOINTS_ROOT = f'{DATA_ROOT}checkpoints/'
 CACHE_ROOT = f'{DATA_ROOT}cache/'
 
 
 
 stylegan_weights = f'{PROJECT_ROOT}/weights/ffhq/stylegan2-ffhq-config-f.pt'
 MNT_ROOT = f'{DATA_ROOT}dubbing/'
+CHECKPOINTS_ROOT = f'{MNT_ROOT}checkpoints/'
 LRS2_PROCESS = f'{MNT_ROOT}lrs2_process/'
 LRS2_ROOT = f'/home/ahertz/Downloads/mvlrs_v1/main'
 FaceForensicsRoot = f'{MNT_ROOT}FaceForensics/'
