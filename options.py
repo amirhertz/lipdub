@@ -1,4 +1,3 @@
-from __future__ import annotations
 import abc
 import os
 import pickle
@@ -7,6 +6,7 @@ import constants
 import constants as const
 from custom_types import *
 
+from torchvision import transforms
 
 class BaseOptions(abc.ABC):
 
@@ -250,3 +250,54 @@ def backward_compatibility(opt: BaseOptions) -> BaseOptions:
         if not hasattr(opt, key):
             setattr(opt, key, item)
     return opt
+
+
+class OptionsStyleDir(BaseOptions):
+    @property
+    def model_name(self) -> str:
+        return 'StyleDir'
+    def __init__(self, **kwargs):
+        super(OptionsStyleDir, self).__init__()
+        #encoder options
+        self.input_nc = 3
+        self.n_styles = 18
+
+        #linear direction options
+        self.num_dirs = 16
+        self.he_init = True
+
+        #generator options
+        self.output_size = 1024
+
+        #landmark mlp options
+        self.mlp_input_size = 40
+        self.mlp_layers = [64, 64, 64]# 2 * 20 landmark points x, y
+
+        #data options
+        self.data_dir = '../Dataset/dataset'
+        self.transform = transforms.Compose([
+        transforms.ToTensor(),
+        transforms.Normalize(mean=(0.5, 0.5, 0.5), std=(0.5, 0.5, 0.5))
+    ])
+        self.use_latent_avg = True
+
+        #loss options
+
+        self.l2_lambda =   1
+        self.id_lambda = 0.1
+        self.lpips_lambda = 0.8
+
+        self.mask_weights = 1
+
+        #optimizer options
+        self.learning_rate = 0.0001
+        self.train_decoder = False
+        self.optim_name = 'ranger'
+
+        #training_options
+        self.batch_size = 8
+        self.nepochs = 50
+        self.num_workers = 8
+
+        self.device = 'cuda:1'
+        self.parallelize = False
