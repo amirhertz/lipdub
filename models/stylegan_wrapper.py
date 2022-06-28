@@ -1,10 +1,19 @@
+import sys
+sys.path.append('./')
 from custom_types import *
 from options import BaseOptions, OptionsSC
 import constants
-from encoder4editing.e4e_models.stylegan2.model import Generator
+from stylegan2.model import Generator
 
+import torch
+import torch.nn as nn
 
 class StyleGanWrapper(nn.Module):
+
+    def __init__(self, opt: BaseOptions):
+        super(StyleGanWrapper, self).__init__()
+        self.generator = Generator(opt.stylegan_size, 512, 8, channel_multiplier=2)
+        self.reset_ckp(CPU)
 
     def forward_z(self, z, out_res=()):
         return self.generator([z], input_is_latent=False, randomize_noise=False, out_res=out_res)
@@ -16,10 +25,7 @@ class StyleGanWrapper(nn.Module):
         ckpt = torch.load(constants.stylegan_weights, map_location=device)
         self.generator.load_state_dict(ckpt['g_ema'], strict=False)
 
-    def __init__(self, opt: BaseOptions):
-        super(StyleGanWrapper, self).__init__()
-        self.generator = Generator(opt.stylegan_size, 512, 8, channel_multiplier=2)
-        self.reset_ckp(CPU)
+
 
 
 def tensor2im(var: T):
@@ -45,6 +51,6 @@ if __name__ == '__main__':
     x = torch.randn(1, 512).cuda()
     w = model.generator.style(x).unsqueeze(1).repeat(1, 18, 1)
     # x = torch.randn(1, 18, 512).cuda()
-    out = model(w)
+    out, _ = model(w)
     files_utils.imshow(out)
     print(out.shape)

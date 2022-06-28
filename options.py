@@ -269,6 +269,13 @@ class OptionsStyleDir(BaseOptions):
         self.input_nc = 3
         self.n_styles = 18
 
+        #e4e or psp (aka gradual style encoder)
+        self.encoder_style = 'e4e'
+
+        #0: don't load anything, 1: load irse weights, 2: load psp weights 3: load e4e weights
+        self.load_pretrained = 3
+
+
         #linear direction options
         self.num_dirs = 16
         self.he_init = True
@@ -278,7 +285,7 @@ class OptionsStyleDir(BaseOptions):
 
         #landmark mlp options
         self.mlp_input_size = 40
-        self.mlp_layers = [64, 64, 64]# 2 * 20 landmark points x, y
+        self.mlp_layers = [64, 64, 64, 64, 64]# 2 * 20 landmark points x, y
 
         #data options
         self.data_dir = '../Dataset/dataset'
@@ -294,17 +301,21 @@ class OptionsStyleDir(BaseOptions):
         self.id_lambda = 0.1
         self.lpips_lambda = 0.8
 
-        self.mask_weights = 1
+        self.mask_weights = 2
 
         #optimizer options
-        self.learning_rate = 0.0001
+        self.learning_rate = 0.001
         self.train_decoder = False
+        self.train_encoder = False
         self.optim_name = 'ranger'
 
         #training_options
-        self.batch_size = 8
-        self.nepochs = 50
+        self.batch_size = 16
+        self.nepochs = 20
         self.num_workers = 8
 
-        self.device = 'cuda:1'
+        self.device = 'cuda:0'
         self.parallelize = False
+
+
+
